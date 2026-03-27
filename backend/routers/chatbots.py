@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from core.auth import get_current_user
 from core.supabase import supabase
+from core.qdrant import qdrant
 from models.chatbot import Chatbot, ChatbotCreate, ChatbotUpdate
 
 router = APIRouter()
@@ -36,7 +37,7 @@ async def list_chatbots(user_id: str = Depends(get_current_user)) -> list[Chatbo
 async def create_chatbot(data: ChatbotCreate, user_id: str = Depends(get_current_user)) -> dict:
     try:
         # create new Qdrant collection
-
+        #qdrant.create_collection()
         # put user_id, data, qdrant_collection info together
         return {}
     except Exception as e:
@@ -68,12 +69,10 @@ async def update_chatbot(data: ChatbotUpdate, chatbot_id: str) -> dict:
 '''
 - DELETE:   /chatbots/{id}  -> delete chatbot + Qdrant collection
 '''
-# TODO: finish delete_chatbot
 @router.delete("/chatbots/{id}")
-async def delete_chatbot(chatbot_id: str) -> dict:
+async def delete_chatbot(chatbot_id: str, chatbot_name: str) -> dict:
     try:
-        # TODO: delete Qdrant collection
-
+        qdrant.delete_collection(chatbot_name)
         supabase.table("chatbots").delete().eq("id", chatbot_id).execute()
         return {"message": "chatbot deleted successfully"}
     except Exception as e:
