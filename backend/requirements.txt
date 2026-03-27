@@ -7,3 +7,6 @@ redis
 pydantic-settings
 python-jose
 python-multipart
+pytest
+pytest-asyncio
+httpx
