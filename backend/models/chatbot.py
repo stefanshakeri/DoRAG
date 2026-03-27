@@ -6,7 +6,6 @@ class Chatbot(BaseModel):
     user_id: str
     name: str
     description: str | None = None
-    qdrant_collection: str
     created_at: str
     updated_at: str
 

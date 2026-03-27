@@ -8,6 +8,7 @@ Chatbot routes:
 '''
 
 from typing import cast
+import json
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -32,14 +33,22 @@ async def list_chatbots(user_id: str = Depends(get_current_user)) -> list[Chatbo
 '''
 - POST:     /chatbots       -> create chatbot + Qdrant collection
 '''
-# TODO: implement create_chatbot
 @router.post("/chatbots")
 async def create_chatbot(data: ChatbotCreate, user_id: str = Depends(get_current_user)) -> dict:
     try:
+        # TODO: remove qdrant_collection field from Supabase "chatbots" table
+        chatbot = {
+            "user_id": user_id,
+            "name": data.name,
+            "description": data.description
+        }
+        new_chatbot_response = supabase.table("chatbots").insert(json.dumps(chatbot)).execute()
         # create new Qdrant collection
-        #qdrant.create_collection()
-        # put user_id, data, qdrant_collection info together
-        return {}
+        new_chatbot = new_chatbot_response.model_dump()
+        qdrant.create_collection(
+            collection_name = new_chatbot["id"]
+        )
+        return {"message": "chatbot created successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -70,9 +79,9 @@ async def update_chatbot(data: ChatbotUpdate, chatbot_id: str) -> dict:
 - DELETE:   /chatbots/{id}  -> delete chatbot + Qdrant collection
 '''
 @router.delete("/chatbots/{id}")
-async def delete_chatbot(chatbot_id: str, chatbot_name: str) -> dict:
+async def delete_chatbot(chatbot_id: str) -> dict:
     try:
-        qdrant.delete_collection(chatbot_name)
+        qdrant.delete_collection(chatbot_id)
         supabase.table("chatbots").delete().eq("id", chatbot_id).execute()
         return {"message": "chatbot deleted successfully"}
     except Exception as e:
