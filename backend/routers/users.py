@@ -9,6 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from core.auth import get_current_user
 from core.supabase import supabase
 from models.user import UserProfile, UserProfileUpdate
+from typing import cast
+from postgrest import CountMethod
 
 router = APIRouter()
 
@@ -19,7 +21,7 @@ router = APIRouter()
 async def get_profile(user_id: str = Depends(get_current_user)) -> UserProfile:
     try:
         user = supabase.table("profiles").select("*").eq("id", user_id).single().execute()
-        return UserProfile(**user.data)
+        return UserProfile(**cast(dict, user.data))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -35,7 +37,7 @@ async def update_profile(
         # only send provided fields
         updates = data.model_dump(exclude_none=True)
         user = supabase.table("profiles").update(updates).eq("id", user_id).execute()
-        return UserProfile(**user.data[0])
+        return UserProfile(**cast(dict, user.data[0]))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -46,10 +48,11 @@ async def update_profile(
 async def get_usage(user_id: str = Depends(get_current_user)) -> dict:
     try:
         # get chatbot count
-        chatbots = supabase.table("chatbots").select("id", count="exact").eq("user_id", user_id).execute()
+        chatbots = supabase.table("chatbots").select("id", count=CountMethod.exact).eq("user_id", user_id).execute()
         # document count + storage used
         documents = supabase.table("documents").select("file_size_bytes").eq("user_id", user_id).execute()
-        total_storage = sum(doc["file_size_bytes"] for doc in documents.data)
+        docs = cast(list[dict], documents.data)
+        total_storage = sum(doc["file_size_bytes"] for doc in docs)
 
         return {
             "chatbot_count": chatbots.count,

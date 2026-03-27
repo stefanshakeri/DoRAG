@@ -11,7 +11,9 @@ security = HTTPBearer()
 async def get_current_user(token = Depends(security)) -> str:
     try:
         # verify the JWT token with Supabase
-        user = supabase.auth.get_user(token.credentials)
-        return user.user.id
+        response = supabase.auth.get_user(token.credentials)
+        if response is None or response.user is None:
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+        return response.user.id
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")

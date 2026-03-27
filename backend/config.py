@@ -13,11 +13,10 @@ class Settings(BaseSettings):
     # OpenAI
     openai_api_key: str
 
-    # Other configs
+    # Redis
     redis_url: str
-    jwt_secret: str
 
     class Config:
         env_file = ".env"
 
-settings = Settings()
+settings = Settings()   # type: ignore
