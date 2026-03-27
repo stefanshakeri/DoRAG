@@ -4,13 +4,14 @@ User routes:
 - PATCH:    /users/me       -> update user info
 - GET:      /users/me/usage -> bot count, storage used, etc.
 '''
+from typing import cast
 
 from fastapi import APIRouter, Depends, HTTPException
+from postgrest import CountMethod
+
 from core.auth import get_current_user
 from core.supabase import supabase
 from models.user import UserProfile, UserProfileUpdate
-from typing import cast
-from postgrest import CountMethod
 
 router = APIRouter()
 
@@ -32,12 +33,12 @@ async def get_profile(user_id: str = Depends(get_current_user)) -> UserProfile:
 async def update_profile(
     data: UserProfileUpdate,
     user_id: str = Depends(get_current_user)
-) -> UserProfile:
+) -> dict:
     try:
         # only send provided fields
         updates = data.model_dump(exclude_none=True)
-        user = supabase.table("profiles").update(updates).eq("id", user_id).execute()
-        return UserProfile(**cast(dict, user.data[0]))
+        supabase.table("profiles").update(updates).eq("id", user_id).execute()
+        return {"message": "profile updated successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

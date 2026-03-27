@@ -1,4 +1,5 @@
 from supabase.client import create_client, Client
+
 from config import settings
 
 # anon key for normal user operations

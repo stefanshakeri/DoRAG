@@ -1,6 +1,8 @@
 import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import patch
+
+from fastapi.testclient import TestClient
+
 from main import app
 from core.auth import get_current_user
 

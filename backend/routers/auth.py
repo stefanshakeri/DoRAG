@@ -5,6 +5,7 @@ Authentication routes:
 '''
 
 from fastapi import APIRouter, Depends, HTTPException
+
 from core.auth import get_current_user
 from core.supabase import supabase_admin
 

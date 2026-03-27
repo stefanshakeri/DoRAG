@@ -4,6 +4,7 @@ Extract + validate user ID from JWT
 
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer
+
 from core.supabase import supabase
 
 security = HTTPBearer()

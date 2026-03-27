@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+# Supabase profiles table schema
 class UserProfile(BaseModel):
     id: str
     email: str

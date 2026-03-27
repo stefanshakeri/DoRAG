@@ -1,4 +1,5 @@
 from qdrant_client import QdrantClient
+
 from config import settings
 
 qdrant = QdrantClient(
