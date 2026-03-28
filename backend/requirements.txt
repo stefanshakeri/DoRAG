@@ -10,3 +10,10 @@ python-multipart
 pytest
 pytest-asyncio
 httpx
+langchain
+langchain-text-splitters
+langchain-openai
+langchain-community
+tiktoken
+pypdf
+python-docx
