@@ -8,8 +8,6 @@ Document routes:
 '''
 
 from typing import cast
-import time
-import json
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from qdrant_client.models import Filter, FieldCondition, MatchValue
@@ -23,7 +21,7 @@ from services.ingestion import ingest_document
 router = APIRouter()
 
 '''
-- GET:      /chatbots/{id}/documents                    -> list all docs for a chatbot
+- GET:      /chatbots/documents                         -> list all docs for a user
 '''
 @router.get("/documents")
 async def list_user_documents(user_id: str = Depends(get_current_user)) -> list[Document]:
@@ -36,10 +34,10 @@ async def list_user_documents(user_id: str = Depends(get_current_user)) -> list[
 '''
 - GET:      /chatbots/{id}/documents                    -> list all docs for a chatbot
 '''
-@router.get("/{id}/documents")
-async def list_documents(chatbot_id: str) -> list[Document]:
+@router.get("/{chatbot_id}/documents")
+async def list_documents(chatbot_id: str, user_id: str = Depends(get_current_user)) -> list[Document]:
     try:
-        documents = supabase.table("documents").select("*").eq("chatbot_id", chatbot_id).execute()
+        documents = supabase.table("documents").select("*").eq("chatbot_id", chatbot_id).eq("user_id", user_id).execute()
         return [Document(**cast(dict, doc)) for doc in documents.data]
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -48,12 +46,12 @@ async def list_documents(chatbot_id: str) -> list[Document]:
 - POST:     /chatbots/{id}/documents                    -> upload file --> ingest pipeline
 '''
 # TODO: finish upload_document
-@router.post("/{id}/documents")
+@router.post("/{chatbot_id}/documents")
 # TODO: figure out document object type
 async def upload_document(chatbot_id: str, file: UploadFile = File(...), user_id: str = Depends(get_current_user)) -> dict:
     try:
         # load chatbot
-        chatbot = supabase.table("chatbots").select("*").eq("id", chatbot_id).single().execute()
+        chatbot = supabase.table("chatbots").select("*").eq("id", chatbot_id).eq("user_id", user_id).single().execute()
         if not chatbot.data:
             raise HTTPException(status_code=404, detail="Chatbot not found")
         
@@ -90,6 +88,9 @@ async def upload_document(chatbot_id: str, file: UploadFile = File(...), user_id
         )
 
         return doc_data[0]
+    
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -97,17 +98,16 @@ async def upload_document(chatbot_id: str, file: UploadFile = File(...), user_id
 - DELETE:   /chatbots/{id}/documents/{doc_id}           -> delete doc from storage + Qdrant
 '''
 # TODO: finish delete_document
-@router.delete("/{id}/documents/{doc_id}")
-async def delete_document(doc_id: str) -> dict:
+@router.delete("/{chatbot_id}/documents/{doc_id}")
+async def delete_document(chatbot_id: str, doc_id: str, user_id: str = Depends(get_current_user)) -> dict:
     try:        
         # delete document from supabase storage
-        document_response = supabase.table("documents").select("*").eq("id", doc_id).single().execute()
+        document_response = supabase.table("documents").select("*").eq("id", doc_id).eq("chatbot_id", chatbot_id).eq("user_id", user_id).single().execute()
         if not document_response.data:
             raise HTTPException(status_code=404, detail="Document not found")
-        document = document_response.model_dump()
+        document = cast(dict, document_response.data)
         file_path = f"{document['user_id']}/{document['chatbot_id']}/{document['file_name']}"
-        chatbot_id = document["chatbot_id"]
-        supabase.storage.from_(chatbot_id).remove([file_path])
+        supabase.storage.from_("documents").remove([file_path])
         
         # delete row from documents table
         supabase.table("documents").delete().eq("id", doc_id).execute()
@@ -127,18 +127,23 @@ async def delete_document(doc_id: str) -> dict:
         )
 
         return {"message": "document deleted successfully"}
+    
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 '''
 - GET:      /chatbots/{id}/documents/{doc_id}/status    -> check ingestion status
 '''
-@router.get("/{id}/documents/{doc_id}/status")
-async def get_document_status(doc_id: str) -> dict:
+@router.get("/{chatbot_id}/documents/{doc_id}/status")
+async def get_document_status(doc_id: str, chatbot_id: str, user_id: str = Depends(get_current_user)) -> dict:
     try:
-        document_response = supabase.table("documents").select("id, file_name, status, chunk_count").eq("id", doc_id).single().execute()
+        document_response = supabase.table("documents").select("id, file_name, status, chunk_count").eq("id", doc_id).eq("chatbot_id", chatbot_id).eq("user_id", user_id).single().execute()
         if not document_response.data:
             raise HTTPException(status_code=404, detail="Document not found")
         return cast(dict, document_response.data)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
