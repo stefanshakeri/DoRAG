@@ -5,6 +5,7 @@ from qdrant_client.models import PointStruct
 from core.qdrant import qdrant
 from core.supabase import supabase
 from core.redis import redis_client
+from core.openai import embeddings_model
 from config import settings
 
 import tiktoken
@@ -25,8 +26,6 @@ COOLDOWN_SECONDS = settings.cooldown_seconds
 TTL_SECONDS = settings.ttl_seconds
 
 enc = tiktoken.encoding_for_model("text-embedding-3-large")
-embeddings_model = OpenAIEmbeddings(model="text-embedding-3-large")
-
 
 async def ingest_document(
         chatbot_id: str,

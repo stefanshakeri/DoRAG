@@ -1,7 +1,5 @@
 from core.qdrant import qdrant
-from langchain_openai import OpenAIEmbeddings
-
-embeddings_model = OpenAIEmbeddings(model="text-embedding-3-large")
+from core.openai import embeddings_model
 
 async def retrieve_context(collection_name: str, query: str, top_k: int = 5) -> str:
     '''
