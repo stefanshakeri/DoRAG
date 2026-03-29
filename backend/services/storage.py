@@ -85,3 +85,14 @@ def list_chatbot_files(user_id: str, chatbot_id: str) -> list[dict]:
     files = supabase.storage.from_(BUCKET).list(folder)
     return files or []
 
+
+def build_path(user_id: str, chatbot_id: str, filename: str) -> str:
+    '''
+    Build the storage path for a file based on user ID, chatbot ID, and filename
+
+    :param user_id: ID of the user
+    :param chatbot_id: ID of the chatbot
+    :param filename: name of the file
+    :returns: storage path for the file
+    '''
+    return f"{user_id}/{chatbot_id}/{filename}"
