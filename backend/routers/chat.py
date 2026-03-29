@@ -178,3 +178,24 @@ async def get_conversation_history(conv_id: str, limit: int = 10) -> list[dict]:
     messages = supabase.table("messages").select("*").eq("conversation_id", conv_id).order("created_at", desc=False).limit(limit).execute()
     return cast(list[dict], messages.data)
 
+
+async def update_conversation_cache(conv_id: str, user_message: str, assistant_response: str):
+    '''
+    Update Redis cache for conversation history
+    
+    :param conv_id: conversation ID
+    :param user_message: latest user message to add to cache
+    :param assistant_response: latest assistant response to add to cache
+    '''
+    redis_key = f"context:{conv_id}"
+    result = redis_client.rpush(
+        redis_key,
+        json.dumps({"role": "user", "content": user_message}),
+        json.dumps({"role": "assistant", "content": assistant_response})
+    )
+    if hasattr(result, '__await__'):
+        await result
+
+    expire_result = redis_client.expire(redis_key, 7200)
+    if hasattr(expire_result, '__await__'):
+        await expire_result
