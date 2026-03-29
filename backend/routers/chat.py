@@ -120,3 +120,29 @@ async def get_conversation(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
+'''
+- DELETE:   /chatbots/{id}/conversations/{conv_id}  -> delete a conversation
+'''
+@router.delete("/{chatbot_id}/conversations/{conv_id}")
+async def delete_conversation(
+    chatbot_id: str,
+    conv_id: str,
+    user_id: str = Depends(get_current_user)
+) -> dict:
+    try:
+        # verify ownership
+        conversation = supabase.table("conversations").select("*").eq("id", conv_id).eq("chatbot_id", chatbot_id).eq("user_id", user_id).single().execute()
+        if not conversation.data:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        # delete conversation
+        supabase.table("conversations").delete().eq("id", conv_id).execute()
+
+        # clear Redis cache
+        await redis_client.delete(f"context:{conv_id}")
+        return {"message": "conversation deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
