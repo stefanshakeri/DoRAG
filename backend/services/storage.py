@@ -28,3 +28,31 @@ def upload_file(
 
     return supabase.storage.from_(BUCKET).get_public_url(file_path)
 
+
+def delete_file(user_id: str, chatbot_id: str, filename: str):
+    '''
+    Delete a single file from Supabase storage
+
+    :param user_id: ID of the user
+    :param chatbot_id: ID of the chatbot the document belongs to
+    :param filename: name of the file to delete
+    '''
+    file_path = build_path(user_id, chatbot_id, filename)
+    supabase.storage.from_(BUCKET).remove([file_path])
+
+
+def delete_chatbot_files(user_id: str, chatbot_id: str):
+    '''
+    Delete all files for a given chatbot from Supabase storage
+
+    :param user_id: ID of the user
+    :param chatbot_id: ID of the chatbot whose files should be deleted
+    '''
+    folder = f"{user_id}/{chatbot_id}/"
+    files = supabase.storage.from_(BUCKET).list(folder)
+
+    if not files:
+        return
+    
+    paths = [f"{folder}/{file['name']}" for file in files]
+    supabase.storage.from_(BUCKET).remove(paths)
