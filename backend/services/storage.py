@@ -73,3 +73,15 @@ def get_signed_url(user_id: str, chatbot_id: str, filename: str, expires_in: int
     return result["signedURL"]
 
 
+def list_chatbot_files(user_id: str, chatbot_id: str) -> list[dict]:
+    '''
+    List all files in a chatbot's folder in Supabase storage
+
+    :param user_id: ID of the user
+    :param chatbot_id: ID of the chatbot
+    :returns: list of file metadata dicts
+    '''
+    folder = f"{user_id}/{chatbot_id}/"
+    files = supabase.storage.from_(BUCKET).list(folder)
+    return files or []
+
