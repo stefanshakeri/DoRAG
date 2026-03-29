@@ -102,3 +102,9 @@ def mock_documents_qdrant():
 def mock_ingest_document():
     with patch("routers.documents.ingest_document", new_callable=AsyncMock) as mock:
         yield mock
+
+
+@pytest.fixture
+def mock_supabase_admin():
+    with patch("routers.auth.supabase_admin") as mock:
+        yield mock
