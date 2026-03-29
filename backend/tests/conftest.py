@@ -108,3 +108,8 @@ def mock_ingest_document():
 def mock_supabase_admin():
     with patch("routers.auth.supabase_admin") as mock:
         yield mock
+
+@pytest.fixture
+def mock_supabase_chat():
+    with patch("routers.chat.supabase") as mock:
+        yield mock
