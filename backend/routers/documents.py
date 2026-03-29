@@ -17,6 +17,7 @@ from core.supabase import supabase
 from core.qdrant import qdrant
 from models.document import Document
 from services.ingestion import ingest_document
+from services.storage import upload_file, delete_file
 
 router = APIRouter()
 
@@ -57,23 +58,17 @@ async def upload_document(chatbot_id: str, file: UploadFile = File(...), user_id
         
         # read file
         file_bytes = await file.read()
-        file_path = f"{user_id}/{chatbot_id}/{file.filename}"
+        filename = file.filename or "unknown"
 
         # upload to supabase storage
-        supabase.storage.from_("documents").upload(
-            path = file_path,
-            file=file_bytes,
-            file_options={"content-type": file.content_type or "application/octet-stream"}
-        )
+        file_url = upload_file(user_id, chatbot_id, filename, file_bytes, file.content_type or "application/octet-stream")
 
-        # create document record in supabase
-        file_url = supabase.storage.from_("documents").get_public_url(file_path)
         doc = supabase.table("documents").insert({
             "chatbot_id": chatbot_id,
             "user_id": user_id,
-            "file_name": file.filename,
+            "file_name": filename,
             "file_url": file_url,
-            "file_type": file.filename.split(".")[-1] if file.filename else "unknown",
+            "file_type": filename.split(".")[-1] if filename else "unknown",
             "file_size_bytes": len(file_bytes),
             "status": "pending"
         }).execute()
@@ -84,7 +79,7 @@ async def upload_document(chatbot_id: str, file: UploadFile = File(...), user_id
             chatbot_id=chatbot_id,
             document_id=doc_id,
             file_bytes=file_bytes,
-            filename=file.filename or "unknown"
+            filename=filename
         )
 
         return doc_data[0]
@@ -106,8 +101,7 @@ async def delete_document(chatbot_id: str, doc_id: str, user_id: str = Depends(g
         if not document_response.data:
             raise HTTPException(status_code=404, detail="Document not found")
         document = cast(dict, document_response.data)
-        file_path = f"{document['user_id']}/{document['chatbot_id']}/{document['file_name']}"
-        supabase.storage.from_("documents").remove([file_path])
+        delete_file(user_id, chatbot_id, document['file_name'])
         
         # delete row from documents table
         supabase.table("documents").delete().eq("id", doc_id).execute()

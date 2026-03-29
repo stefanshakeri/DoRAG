@@ -17,6 +17,7 @@ from core.auth import get_current_user
 from core.supabase import supabase
 from core.qdrant import qdrant
 from models.chatbot import Chatbot, ChatbotCreate, ChatbotUpdate
+from services.storage import delete_chatbot_files
 
 router = APIRouter()
 
@@ -102,9 +103,7 @@ async def delete_chatbot(chatbot_id: str, user_id: str = Depends(get_current_use
         qdrant.delete_collection(chatbot_id)
         supabase.table("chatbots").delete().eq("id", chatbot_id).eq("user_id", user_id).execute()
         # delete chatbot bucket, assoc. documents
-        files = supabase.storage.from_("documents").list(f"{user_id}/{chatbot_id}")
-        paths = [f"{user_id}/{chatbot_id}/{f['name']}" for f in files]
-        supabase.storage.from_("documents").remove(paths)
+        delete_chatbot_files(user_id, chatbot_id)
         return {"message": "chatbot deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
