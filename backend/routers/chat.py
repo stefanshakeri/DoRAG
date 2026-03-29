@@ -83,3 +83,40 @@ async def chat(chatbot_id: str, data: ChatRequest, user_id: str = Depends(get_cu
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+'''
+- GET:      /chatbots/{id}/conversations            -> list all conversations
+'''
+@router.get("/{chatbot_id}/conversations")
+async def list_conversations(chatbot_id: str, user_id: str = Depends(get_current_user)) -> list[dict]:
+    try:
+        conversations = supabase.table("conversations").select("*").eq("chatbot_id", chatbot_id).eq("user_id", user_id).execute()
+        return cast(list[dict], conversations.data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+
+'''
+- GET:      /chatbots/{id}/conversations/{conv_id}  -> get conversation history
+'''
+@router.get("/{chatbot_id}/conversations/{conv_id}")
+async def get_conversation(
+    chatbot_id: str,
+    conv_id: str,
+    user_id: str = Depends(get_current_user)
+) -> list[dict]:
+    try:
+        # verify conversation belongs to user
+        conversation = supabase.table("conversations").select("*").eq("id", conv_id).eq("chatbot_id", chatbot_id).eq("user_id", user_id).single().execute()
+        if not conversation.data:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        # get all conversation messages
+        messages = supabase.table("messages").select("*").eq("conversation_id", conv_id).execute()
+        return cast(list[dict], messages.data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
