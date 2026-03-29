@@ -56,3 +56,20 @@ def delete_chatbot_files(user_id: str, chatbot_id: str):
     
     paths = [f"{folder}/{file['name']}" for file in files]
     supabase.storage.from_(BUCKET).remove(paths)
+
+
+def get_signed_url(user_id: str, chatbot_id: str, filename: str, expires_in: int = 3600) -> str:
+    '''
+    Generate a temporary signed URL for a file in Supabase storage
+
+    :param user_id: ID of the user
+    :param chatbot_id: ID of the chatbot the document belongs to
+    :param filename: name of the file
+    :param expires_in: time in seconds until the signed URL expires
+    :returns: signed URL for the file
+    '''
+    file_path = build_path(user_id, chatbot_id, filename)
+    result = supabase.storage.from_(BUCKET).create_signed_url(file_path, expires_in)
+    return result["signedURL"]
+
+
