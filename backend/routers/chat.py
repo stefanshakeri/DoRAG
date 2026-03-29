@@ -146,3 +146,35 @@ async def delete_conversation(
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+
+# ---------------------------------------------------
+# Helper functions for conversation history caching
+# ---------------------------------------------------
+
+async def get_conversation_history(conv_id: str, limit: int = 10) -> list[dict]:
+    '''
+    Get conversation history from Redis cache, fallback to Supabase if not in cache
+
+    :param conv_id: conversation ID
+    :param limit: number of recent messages to retrieve
+    :returns: list of messages in the conversation history
+    '''
+    redis_key = f"context:{conv_id}"
+
+    try:
+        cached = redis_client.lrange(redis_key, -limit, -1)
+        if isinstance(cached, list):
+            if cached:
+                return [json.loads(item) for item in cached]
+        else:
+            cached = await cached
+            if cached:
+                return [json.loads(item) for item in cached]
+    except Exception:
+        pass
+
+    # Supabase fallback
+    messages = supabase.table("messages").select("*").eq("conversation_id", conv_id).order("created_at", desc=False).limit(limit).execute()
+    return cast(list[dict], messages.data)
+
