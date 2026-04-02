@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 
 from routers import auth, chatbots, documents, chat, users
-
 # from middleware.rate_limit import RateLimitMiddleware
+from middleware.logging import LoggingMiddleware
 
 app = FastAPI(title="DoRAG API")
 
 # app.add_middleware(RateLimitMiddleware)
+app.add_middleware(LoggingMiddleware)
 
 # include routers
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
