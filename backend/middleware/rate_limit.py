@@ -25,6 +25,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if request.url.path in ["/docs", "/redoc", "/openapi.json", "/health"]:
             return await call_next(request)
         
+        # global rate limit check
+        if await self.check_global_limit(request.url.path):
+            return JSONResponse(
+                status_code=503,
+                content={"detail": "Service is temporarily overloaded. Please try again later."}
+            )
+        
         # get user ID (else IP)
         user_id = self.get_user_id(request)
 
@@ -72,6 +79,29 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             logger.error(f"Rate limit check failed: {str(e)} - failing open")
             return await call_next(request)
+        
+    async def check_global_limit(path: str) -> bool:
+        '''
+        If global limit is exceeded, returns true
+
+        :param path: Request path as string
+        :returns: True if global limit exceeded, else False
+        '''
+        global_rules = {
+            "/chatbots/chat": {"limit": 1000, "window": 60},
+            "/chatbots/documents": {"limit": 200, "window": 60}
+        }
+
+        for prefix, rule in global_rules.items():
+            if prefix in path:
+                key = f"global_ratelimit:{prefix}"
+                count = await redis_client.incr(key)
+                if count == 1:
+                    await redis_client.expire(key, rule["window"])
+                if count > rule["limit"]:
+                    return True
+        
+        return False
     
     @staticmethod
     def get_user_id(request: Request) -> str:
