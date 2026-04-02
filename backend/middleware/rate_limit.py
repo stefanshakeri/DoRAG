@@ -14,7 +14,7 @@ RATE_LIMIT_RULES = {
     "/chatbots/documents":  {"limit": 10, "window": 60},
     "/chatbots":            {"limit": 60, "window": 60},
     "/users":               {"limit": 60, "window": 60},
-    "/auth":                {"limit": 10, "window": 60}
+    "/auth":                {"limit": 5, "window": 3600}
 }
 
 DEFAULT_RULE = {"limit": 60, "window": 60}
