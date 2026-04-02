@@ -90,3 +90,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return f"ip:{forwarded_for.split(',')[0].strip()}"
 
         return f"ip:{request.client.host if request.client else 'unknown'}"
+    
+    def get_rule(path: str) -> dict:
+        '''
+        Find the most specific matching rule for a given path. 
+
+        :param path: Request path as string
+        :returns: Matching rate limit rule as dictionary
+        '''
+        for prefix, rule in RATE_LIMIT_RULES.items():
+            if prefix in path:
+                return rule
+
+        return DEFAULT_RULE
