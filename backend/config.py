@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     max_items: int = 2048
     cooldown_seconds: int = 60
     ttl_seconds: int = 3600
+    openai_daily_limit: int = 1000
 
     class Config:
         env_file = ".env"
