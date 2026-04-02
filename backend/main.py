@@ -25,3 +25,8 @@ app.include_router(chatbots.router, prefix="/chatbots", tags=["Chatbots"])
 app.include_router(documents.router, prefix="/chatbots", tags=["Documents"])
 app.include_router(chat.router, prefix="/chatbots", tags=["Chat"])
 
+
+# health check endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
