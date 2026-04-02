@@ -26,10 +26,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         
         # get user ID (else IP)
-        user_id = get_user_id(request)
+        user_id = self.get_user_id(request)
 
         # find matching rule
-        rule = get_rule(request.url.path)
+        rule = self.get_rule(request.url.path)
         limit = rule["limit"]
         window = rule["window"]
 
@@ -73,6 +73,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             logger.error(f"Rate limit check failed: {str(e)} - failing open")
             return await call_next(request)
     
+    @staticmethod
     def get_user_id(request: Request) -> str:
         '''
         Extract user identifier from request. Uses auth token if present, falls back to IP address. 
@@ -91,6 +92,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         return f"ip:{request.client.host if request.client else 'unknown'}"
     
+    @staticmethod
     def get_rule(path: str) -> dict:
         '''
         Find the most specific matching rule for a given path. 
