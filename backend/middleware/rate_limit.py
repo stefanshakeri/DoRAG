@@ -72,3 +72,21 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             logger.error(f"Rate limit check failed: {str(e)} - failing open")
             return await call_next(request)
+    
+    def get_user_id(request: Request) -> str:
+        '''
+        Extract user identifier from request. Uses auth token if present, falls back to IP address. 
+
+        :param request: HTTP request object
+        :returns: User identifier as string
+        '''
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            return f"user:{auth_header[-16:]}"
+        
+        # fall back to IP address otherwise
+        forwarded_for = request.headers.get("x-forwarded-for")
+        if forwarded_for:
+            return f"ip:{forwarded_for.split(',')[0].strip()}"
+
+        return f"ip:{request.client.host if request.client else 'unknown'}"
