@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str
 
+    # Document parameters
+    max_file_size_bytes: int = 20 * 1024 * 1024     # 20 MB
+    max_bytes_per_chatbot: int = 100 * 1024 * 1024  # 100 MB
+    allowed_extensions: set[str] = {"pdf", "docx", "txt", "md"}
+
     # Ingestion parameters
     chunk_size: int = 1500
     chunk_overlap: int = 200

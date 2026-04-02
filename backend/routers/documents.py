@@ -18,6 +18,7 @@ from core.qdrant import qdrant
 from models.document import Document
 from services.ingestion import ingest_document
 from services.storage import upload_file, delete_file
+from config import settings
 
 router = APIRouter()
 
@@ -50,7 +51,23 @@ async def list_documents(chatbot_id: str, user_id: str = Depends(get_current_use
 @router.post("/{chatbot_id}/documents")
 # TODO: figure out document object type
 async def upload_document(chatbot_id: str, file: UploadFile = File(...), user_id: str = Depends(get_current_user)) -> dict:
+    # file checks
+    ext = file.filename.split(".")[-1].lower() if file.filename else ""
+    if ext not in settings.allowed_extensions:
+        raise HTTPException(status_code=400, detail=f"File type not allowed. Allowed types: {', '.join(settings.allowed_extensions)}")
+    
+    file_bytes = await file.read()
+    if len(file_bytes) > settings.max_file_size_bytes:
+        raise HTTPException(status_code=400, detail=f"File size exceeds limit of {settings.max_file_size_bytes / (1024 * 1024)} MB")
+    
     try:
+        # chatbot total documents size check
+        documents = supabase.table("documents").select("file_size_bytes").eq("chatbot_id", chatbot_id).eq("user_id", user_id).execute()
+        if documents.data not in (None, []):
+            total_size = sum(doc["file_size_bytes"] for doc in documents.data) + len(file_bytes)
+            if total_size > settings.max_bytes_per_chatbot:
+                raise HTTPException(status_code=400, detail=f"Total document size for this chatbot exceeds limit of {settings.max_bytes_per_chatbot / (1024 * 1024)} MB")
+
         # load chatbot
         chatbot = supabase.table("chatbots").select("*").eq("id", chatbot_id).eq("user_id", user_id).single().execute()
         if not chatbot.data:
