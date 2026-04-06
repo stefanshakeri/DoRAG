@@ -80,6 +80,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             logger.error(f"Rate limit check failed: {str(e)} - failing open")
             return await call_next(request)
         
+    @staticmethod
     async def check_global_limit(path: str) -> bool:
         '''
         If global limit is exceeded, returns true
