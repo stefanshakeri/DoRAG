@@ -1,6 +1,8 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
     # Supabase
     supabase_url: str
     supabase_anon_key: str
@@ -11,7 +13,9 @@ class Settings(BaseSettings):
     # OpenAI
     openai_api_key: str
     # Redis
-    redis_url: str
+    redis_host: str
+    redis_port: int
+    redis_password: str
 
     # Document parameters
     max_file_size_bytes: int = 20 * 1024 * 1024     # 20 MB
@@ -27,8 +31,5 @@ class Settings(BaseSettings):
     cooldown_seconds: int = 60
     ttl_seconds: int = 3600
     openai_daily_limit: int = 1000
-
-    class Config:
-        env_file = ".env"
 
 settings = Settings()   # type: ignore

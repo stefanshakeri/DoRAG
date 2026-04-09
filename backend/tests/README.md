@@ -50,6 +50,8 @@ Optional environment variables:
 - `DORAG_API_TIMEOUT_SECONDS` (default: `10`)
 - `DORAG_API_BEARER_TOKEN` to run authenticated checks
 - `DORAG_QDRANT_URL` and optional `DORAG_QDRANT_API_KEY` to run live Qdrant request checks
+- `DORAG_SUPABASE_URL` and optional `DORAG_SUPABASE_API_KEY` to run live Supabase API checks
+- `DORAG_REDIS_HOST`, `DORAG_REDIS_PORT`, optional `DORAG_REDIS_USERNAME`, `DORAG_REDIS_PASSWORD`, and optional `DORAG_REDIS_SSL` to run live Redis connectivity checks
 
 ### Run a single test case
 
